@@ -1,65 +1,195 @@
-import Image from "next/image";
+'use client';
+// Import React dan hook useState, useEffect untuk mengelola state komponen
+import React, { useState, useEffect, useRef } from 'react';
+// Import komponen GameBoard dan ScoreBoard
+import GameBoard from '../components/GameBoard';
+import ScoreBoard from '../components/ScoreBoard';
+// Import react-icons
+import { GiCardJoker } from 'react-icons/gi';
+import {
+  FaAppleAlt,
+  FaLemon,
+  FaHeart,
+  FaStar,
+  FaBolt,
+  FaLeaf,
+  FaGem,
+  FaFire,
+  FaIceCream,
+  FaMoon,
+  FaSnowflake,
+  FaMusic,
+} from 'react-icons/fa';
+
+// Pool semua icon yang bisa muncul sebagai kartu
+const ALL_ICONS = [
+  { icon: FaAppleAlt,  color: '#ef4444' },
+  { icon: FaLemon,     color: '#eab308' },
+  { icon: FaHeart,     color: '#ec4899' },
+  { icon: FaStar,      color: '#f97316' },
+  { icon: FaBolt,      color: '#a855f7' },
+  { icon: FaLeaf,      color: '#eab308' },
+  { icon: FaGem,       color: '#818cf8' },
+  { icon: FaFire,      color: '#f97316' },
+  { icon: FaIceCream,  color: '#f472b6' },
+  { icon: FaMoon,      color: '#fbbf24' },
+  { icon: FaSnowflake, color: '#67e8f9' },
+  { icon: FaMusic,     color: '#c084fc' },
+];
+
+// Jumlah pasangan per difficulty
+const DIFFICULTY_PAIRS = {
+  easy:   4,
+  medium: 6,
+  hard:   8,
+};
+
+// Fungsi untuk mengacak urutan array (Fisher-Yates shuffle)
+const shuffleArray = (array) => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
+// Fungsi untuk membuat set kartu baru berdasarkan difficulty
+const createCards = (difficulty) => {
+  const pairs = DIFFICULTY_PAIRS[difficulty];
+  const shuffledPool = shuffleArray(ALL_ICONS).slice(0, pairs);
+  const paired = shuffledPool.flatMap((item, index) => [
+    { id: index * 2,     icon: item.icon, color: item.color, pairId: index },
+    { id: index * 2 + 1, icon: item.icon, color: item.color, pairId: index },
+  ]);
+  return shuffleArray(paired);
+};
 
 export default function Home() {
+  const [difficulty, setDifficulty]       = useState('easy');
+  const [cards, setCards]                 = useState([]);
+  const [flippedCards, setFlippedCards]   = useState([]);
+  const [matchedCards, setMatchedCards]   = useState([]);
+  const [moves, setMoves]                 = useState(0);
+  const [timer, setTimer]                 = useState(0);
+  const [timerRunning, setTimerRunning]   = useState(false);
+  const timerRef                          = useRef(null);
+
+  // Inisialisasi kartu saat pertama kali render
+  useEffect(() => {
+    setCards(createCards(difficulty));
+  }, []);
+
+  // Jalankan/hentikan timer
+  useEffect(() => {
+    if (timerRunning) {
+      timerRef.current = setInterval(() => setTimer(prev => prev + 1), 1000);
+    } else {
+      clearInterval(timerRef.current);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [timerRunning]);
+
+  // Hentikan timer jika game selesai
+  const totalPairs = DIFFICULTY_PAIRS[difficulty];
+  useEffect(() => {
+    if (matchedCards.length === cards.length && cards.length > 0) {
+      setTimerRunning(false);
+    }
+  }, [matchedCards, cards]);
+
+  // Cek kecocokan setiap kali 2 kartu terbuka
+  useEffect(() => {
+    if (flippedCards.length === 2) {
+      const [firstId, secondId] = flippedCards;
+      const firstCard  = cards.find(c => c.id === firstId);
+      const secondCard = cards.find(c => c.id === secondId);
+
+      setMoves(prev => prev + 1);
+
+      if (firstCard.pairId === secondCard.pairId) {
+        // Cocok: langsung tambah ke matchedCards
+        setMatchedCards(prev => [...prev, firstId, secondId]);
+        setFlippedCards([]);
+      } else {
+        // Tidak cocok: tunggu animasi flip selesai (600ms) baru tutup
+        // 600ms = cukup waktu untuk kartu flip balik ke posisi awal
+        const t = setTimeout(() => {
+          setFlippedCards([]);
+        }, 600);
+        return () => clearTimeout(t);
+      }
+    }
+  }, [flippedCards, cards]);
+
+  // Fungsi membalik kartu saat diklik
+  const handleCardFlip = (id) => {
+    // Mulai timer saat kartu pertama diklik
+    if (!timerRunning && matchedCards.length === 0 && flippedCards.length === 0 && moves === 0) {
+      setTimerRunning(true);
+    }
+    if (flippedCards.length < 2 && !flippedCards.includes(id)) {
+      setFlippedCards(prev => [...prev, id]);
+    }
+  };
+
+  // Fungsi reset permainan
+  const resetGame = () => {
+    setCards(createCards(difficulty));
+    setFlippedCards([]);
+    setMatchedCards([]);
+    setMoves(0);
+    setTimer(0);
+    setTimerRunning(false);
+  };
+
+  // Fungsi ganti difficulty dan reset otomatis
+  const handleDifficultyChange = (newDifficulty) => {
+    setDifficulty(newDifficulty);
+    setCards(createCards(newDifficulty));
+    setFlippedCards([]);
+    setMatchedCards([]);
+    setMoves(0);
+    setTimer(0);
+    setTimerRunning(true);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div
+      className="min-h-screen flex flex-col items-center justify-center p-4"
+      style={{
+        background: 'radial-gradient(ellipse at 20% 70%, #2d0a6e 0%, #0d0b2e 60%, #0a0820 100%)',
+      }}
+    >
+      {/* Judul dengan animasi floating naik-turun */}
+      <h1 className="text-4xl font-bold mb-6 text-white drop-shadow-lg flex items-center gap-3 animate-float">
+        <GiCardJoker className="text-yellow-300 text-4xl" />
+        <span className="bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
+          Memory Card
+        </span>
+      </h1>
+
+      {/* ScoreBoard */}
+      <ScoreBoard
+        moves={moves}
+        matchedCount={matchedCards.length / 2}
+        totalPairs={totalPairs}
+        onReset={resetGame}
+        difficulty={difficulty}
+        onDifficultyChange={handleDifficultyChange}
+        timer={timer}
+      />
+
+      {/* GameBoard */}
+      <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl shadow-2xl">
+        <GameBoard
+          cards={cards}
+          flippedCards={flippedCards}
+          matchedCards={matchedCards}
+          onFlip={handleCardFlip}
+          difficulty={difficulty}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }
