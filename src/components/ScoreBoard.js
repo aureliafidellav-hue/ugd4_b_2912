@@ -28,8 +28,6 @@ function ScoreBoard({ moves, matchedCount, totalPairs, onReset, difficulty, onDi
 
   return (
     <div className="text-center mb-6">
-
-      {/* Difficulty Selector */}
       <div className="flex justify-center gap-3 mb-5">
         {difficulties.map(({ key, label, pairs, icon: Icon }) => (
           <button
@@ -48,7 +46,6 @@ function ScoreBoard({ moves, matchedCount, totalPairs, onReset, difficulty, onDi
         ))}
       </div>
 
-      {/* Stats */}
       <div className="flex justify-center gap-4 mb-4">
         <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg min-w-[90px]">
           <p className="text-sm text-indigo-200 flex items-center justify-center gap-1">
@@ -72,7 +69,6 @@ function ScoreBoard({ moves, matchedCount, totalPairs, onReset, difficulty, onDi
         </div>
       </div>
 
-      {/* Pesan selamat dengan frame */}
       {isGameComplete && (
         <div
           className="animate-victory-pop mx-auto mb-4 px-6 py-4 rounded-xl max-w-sm"
@@ -87,7 +83,6 @@ function ScoreBoard({ moves, matchedCount, totalPairs, onReset, difficulty, onDi
         </div>
       )}
 
-      {/* Tombol Acak Ulang / Main Lagi dengan glow kuning tipis saat hover */}
       <button
         onClick={onReset}
         onMouseEnter={() => setBtnHovered(true)}

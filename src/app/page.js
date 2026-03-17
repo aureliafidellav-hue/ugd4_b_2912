@@ -1,10 +1,7 @@
 'use client';
-// Import React dan hook useState, useEffect untuk mengelola state komponen
 import React, { useState, useEffect, useRef } from 'react';
-// Import komponen GameBoard dan ScoreBoard
 import GameBoard from '../components/GameBoard';
 import ScoreBoard from '../components/ScoreBoard';
-// Import react-icons
 import { GiCardJoker } from 'react-icons/gi';
 import {
   FaAppleAlt,
@@ -21,7 +18,6 @@ import {
   FaMusic,
 } from 'react-icons/fa';
 
-// Pool semua icon yang bisa muncul sebagai kartu
 const ALL_ICONS = [
   { icon: FaAppleAlt,  color: '#ef4444' },
   { icon: FaLemon,     color: '#eab308' },
@@ -37,14 +33,12 @@ const ALL_ICONS = [
   { icon: FaMusic,     color: '#c084fc' },
 ];
 
-// Jumlah pasangan per difficulty
 const DIFFICULTY_PAIRS = {
   easy:   4,
   medium: 6,
   hard:   8,
 };
 
-// Fungsi untuk mengacak urutan array (Fisher-Yates shuffle)
 const shuffleArray = (array) => {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -54,7 +48,6 @@ const shuffleArray = (array) => {
   return shuffled;
 };
 
-// Fungsi untuk membuat set kartu baru berdasarkan difficulty
 const createCards = (difficulty) => {
   const pairs = DIFFICULTY_PAIRS[difficulty];
   const shuffledPool = shuffleArray(ALL_ICONS).slice(0, pairs);
@@ -75,12 +68,10 @@ export default function Home() {
   const [timerRunning, setTimerRunning]   = useState(false);
   const timerRef                          = useRef(null);
 
-  // Inisialisasi kartu saat pertama kali render
   useEffect(() => {
     setCards(createCards(difficulty));
   }, []);
 
-  // Jalankan/hentikan timer
   useEffect(() => {
     if (timerRunning) {
       timerRef.current = setInterval(() => setTimer(prev => prev + 1), 1000);
@@ -90,7 +81,6 @@ export default function Home() {
     return () => clearInterval(timerRef.current);
   }, [timerRunning]);
 
-  // Hentikan timer jika game selesai
   const totalPairs = DIFFICULTY_PAIRS[difficulty];
   useEffect(() => {
     if (matchedCards.length === cards.length && cards.length > 0) {
@@ -98,7 +88,6 @@ export default function Home() {
     }
   }, [matchedCards, cards]);
 
-  // Cek kecocokan setiap kali 2 kartu terbuka
   useEffect(() => {
     if (flippedCards.length === 2) {
       const [firstId, secondId] = flippedCards;
@@ -108,12 +97,9 @@ export default function Home() {
       setMoves(prev => prev + 1);
 
       if (firstCard.pairId === secondCard.pairId) {
-        // Cocok: langsung tambah ke matchedCards
         setMatchedCards(prev => [...prev, firstId, secondId]);
         setFlippedCards([]);
       } else {
-        // Tidak cocok: tunggu animasi flip selesai (600ms) baru tutup
-        // 600ms = cukup waktu untuk kartu flip balik ke posisi awal
         const t = setTimeout(() => {
           setFlippedCards([]);
         }, 600);
@@ -122,9 +108,7 @@ export default function Home() {
     }
   }, [flippedCards, cards]);
 
-  // Fungsi membalik kartu saat diklik
   const handleCardFlip = (id) => {
-    // Mulai timer saat kartu pertama diklik
     if (!timerRunning && matchedCards.length === 0 && flippedCards.length === 0 && moves === 0) {
       setTimerRunning(true);
     }
@@ -133,7 +117,6 @@ export default function Home() {
     }
   };
 
-  // Fungsi reset permainan
   const resetGame = () => {
     setCards(createCards(difficulty));
     setFlippedCards([]);
@@ -143,7 +126,6 @@ export default function Home() {
     setTimerRunning(false);
   };
 
-  // Fungsi ganti difficulty dan reset otomatis
   const handleDifficultyChange = (newDifficulty) => {
     setDifficulty(newDifficulty);
     setCards(createCards(newDifficulty));
@@ -161,7 +143,6 @@ export default function Home() {
         background: 'radial-gradient(ellipse at 20% 70%, #2d0a6e 0%, #0d0b2e 60%, #0a0820 100%)',
       }}
     >
-      {/* Judul dengan animasi floating naik-turun */}
       <h1 className="text-4xl font-bold mb-6 text-white drop-shadow-lg flex items-center gap-3 animate-float">
         <GiCardJoker className="text-yellow-300 text-4xl" />
         <span className="bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
@@ -169,7 +150,6 @@ export default function Home() {
         </span>
       </h1>
 
-      {/* ScoreBoard */}
       <ScoreBoard
         moves={moves}
         matchedCount={matchedCards.length / 2}
@@ -179,8 +159,7 @@ export default function Home() {
         onDifficultyChange={handleDifficultyChange}
         timer={timer}
       />
-
-      {/* GameBoard */}
+      
       <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl shadow-2xl">
         <GameBoard
           cards={cards}
